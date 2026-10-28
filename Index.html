@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Integrado de Ausentismo Laboral | Talento Humano</title>
+  
+  <!-- FontAwesome & Chart.js CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --primary: #1E3A8A;        /* Azul Oscuro Principal */
+      --primary-light: #2563EB;  /* Azul Secundario */
+      --accent: #F59E0B;         /* Dorado/Naranja Acento */
+      --accent-dark: #D97706;    /* Dorado Oscuro */
+      --bg-light: #F8FAFC;       /* Fondo Limpio */
+      --card-bg: #FFFFFF;        /* Tarjetas */
+      --text-main: #0F172A;      /* Texto Principal */
+      --text-muted: #64748B;     /* Texto Secundario */
+      --border-color: #E2E8F0;  /* Bordes */
+      
+      --danger: #EF4444;
+      --warning: #F59E0B;
+      --success: #10B981;
+      
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --transition: all 0.25s ease-in-out;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-light);
+      color: var(--text-main);
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    /* Container */
+    .dashboard-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Header */
+    header {
+      background: var(--card-bg);
+      padding: 20px 28px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border-left: 6px solid var(--accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .badge-updated {
+      background: #EFF6FF;
+      color: var(--primary-light);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid #BFDBFE;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+    }
+
+    .kpi-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: var(--primary);
+    }
+
+    .kpi-card.accent::before { background: var(--accent); }
+    .kpi-card.danger::before { background: var(--danger); }
+    .kpi-card.warning::before { background: var(--warning); }
+    .kpi-card.success::before { background: var(--success); }
+
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: #F1F5F9;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .kpi-card.accent .kpi-icon { background: #FEF3C7; color: var(--accent-dark); }
+    .kpi-card.danger .kpi-icon { background: #FEE2E2; color: var(--danger); }
+
+    .kpi-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 12px 0 4px 0;
+      line-height: 1.2;
+    }
+
+    .kpi-subtext {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .kpi-subtext strong {
+      color: var(--primary);
+    }
+
+    /* Charts Section */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 20px;
+    }
+
+    .chart-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .col-12 { grid-column: span 12; }
+    .col-8 { grid-column: span 8; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+
+    @media (max-width: 1024px) {
+      .col-8, .col-6, .col-4 { grid-column: span 12; }
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .chart-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .chart-container {
+      position: relative;
+      flex: 1;
+      min-height: 280px;
+      width: 100%;
+    }
+
+    /* Outliers Analysis Section */
+    .outliers-section {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+    }
+
+    .outliers-header {
+      margin-bottom: 16px;
+    }
+
+    .outliers-header h2 {
+      color: var(--primary);
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .outlier-badges {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .outlier-badge {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-extreme { background: #FEE2E2; color: #991B1B; }
+    .badge-moderate { background: #FEF3C7; color: #92400E; }
+    .badge-typical { background: #D1FAE5; color: #065F46; }
+
+    /* Data Table Section */
+    .table-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border-color);
+    }
+
+    .table-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .select-filter {
+      padding: 10px 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      background: #FFF;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      max-height: 480px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    th {
+      background: #F1F5F9;
+      color: var(--primary);
+      padding: 12px 16px;
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th:hover {
+      background: #E2E8F0;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    tbody tr:hover {
+      background: #F8FAFC;
+    }
+
+    .tag {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .tag-area { background: #E0F2FE; color: #0369A1; }
+    .tag-motivo { background: #F3E8FF; color: #6B21A8; }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 16px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border-color);
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    
+    <!-- HEADER -->
+    <header>
+      <div>
+        <h1><i class="fa-solid fa-hospital-user"></i> Dashboard de Ausentismo Laboral</h1>
+        <p>Gestión de Talento Humano & Análisis Estadístico de Permisos y Licencias</p>
+      </div>
+      <div class="badge-updated">
+        <i class="fa-solid fa-circle-check"></i> Datos Procesados: 126 Registros
+      </div>
+    </header>
+
+    <!-- METRICAS CLAVE / KPIS -->
+    <section class="kpi-grid">
+      
+      <!-- KPI 1: Áreas -->
+      <div class="kpi-card danger">
+        <div class="kpi-header">
+          <span>Área Crítica</span>
+          <div class="kpi-icon"><i class="fa-solid fa-building-circle-exclamation"></i></div>
+        </div>
+        <div class="kpi-value" id="kpi-top-area">Cargando...</div>
+        <div class="kpi-subtext" id="kpi-top-area-sub">Acumulado de horas de ausentismo</div>
+      </div>
+
+      <!-- KPI 2: Persona -->
+      <div class="kpi-card accent">
+        <div class="kpi-header">
+          <span>Mayor Ausentismo Indiv.</span>
+          <div class="kpi-icon"><i class="fa-solid fa-user-xmark"></i></div>
+        </div>
+        <div class="kpi-value" id="kpi-top-person">Cargando...</div>
+        <div class="kpi-subtext" id="kpi-top-person-sub">Registros continuos / seguimiento</div>
+      </div>
+
+      <!-- KPI 3: Mes -->
+      <div class="kpi-card warning">
+        <div class="kpi-header">
+          <span>Mes con Mayor Ausentismo</span>
+          <div class="kpi-icon"><i class="fa-solid fa-calendar-xmark"></i></div>
+        </div>
+        <div class="kpi-value" id="kpi-top-month">Cargando...</div>
+        <div class="kpi-subtext" id="kpi-top-month-sub">Pico de solicitudes en el período</div>
+      </div>
+
+      <!-- KPI 4: Horas Perdidas -->
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span>Total Horas Perdidas</span>
+          <div class="kpi-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+        </div>
+        <div class="kpi-value" id="kpi-total-hours">Cargando...</div>
+        <div class="kpi-subtext" id="kpi-total-days">Equivalente a 0 días laborales</div>
+      </div>
+
+      <!-- KPI 5: Permiso Frecuente -->
+      <div class="kpi-card success">
+        <div class="kpi-header">
+          <span>Motivo Frecuente</span>
+          <div class="kpi-icon"><i class="fa-solid fa-file-signature"></i></div>
+        </div>
+        <div class="kpi-value" id="kpi-top-reason">Cargando...</div>
+        <div class="kpi-subtext" id="kpi-top-reason-sub">Mayor cantidad de solicitudes</div>
+      </div>
+
+    </section>
+
+    <!-- SECCIÓN DE GRÁFICOS INTERACTIVOS -->
+    <section class="charts-grid">
+      
+      <!-- Gráfico 1: Ausentismo por Área -->
+      <div class="chart-card col-6">
+        <div class="chart-header">
+          <div class="chart-title"><i class="fa-solid fa-chart-bar"></i> Ausentismo Acumulado por Área (Horas)</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartArea"></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico 2: Top Colaboradores -->
+      <div class="chart-card col-6">
+        <div class="chart-header">
+          <div class="chart-title"><i class="fa-solid fa-users-viewfinder"></i> Top 8 Colaboradores con Más Horas Ausentes</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartColabs"></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico 3: Tendencia Mensual -->
+      <div class="chart-card col-8">
+        <div class="chart-header">
+          <div class="chart-title"><i class="fa-solid fa-chart-line"></i> Tendencia de Ausentismo Mensual (Horas Perdidas)</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartMonthly"></canvas>
+        </div>
+      </div>
+
+      <!-- Gráfico 4: Categorización de Permisos -->
+      <div class="chart-card col-4">
+        <div class="chart-header">
+          <div class="chart-title"><i class="fa-solid fa-chart-pie"></i> Distribución por Motivo de Permiso</div>
+        </div>
+        <div class="chart-container">
+          <canvas id="chartReasons"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- SECCIÓN DE ANÁLISIS DE ATÍPICOS / CLUSTERIZACIÓN -->
+    <section class="outliers-section">
+      <div class="outliers-header">
+        <h2><i class="fa-solid fa-microscope"></i> Análisis de Atipicidad & Clusterización de Casos (Outliers)</h2>
+        <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
+          Clasificación multivariada para distinguir entre permisos recurrentes, licencias por salud/luto e inconsistencias de registro.
+        </p>
+        <div class="outlier-badges">
+          <div class="outlier-badge badge-extreme"><i class="fa-solid fa-triangle-exclamation"></i> 🔴 Atípico Extremo: Tratam. Médico Prolongado / Calamidad Única de alto volumen</div>
+          <div class="outlier-badge badge-moderate"><i class="fa-solid fa-circle-exclamation"></i> 🟡 Atípico Moderado: Frecuencia periódica por compensaciones o familiares</div>
+          <div class="outlier-badge badge-typical"><i class="fa-solid fa-circle-check"></i> 🟢 Patrón Típico: Permisos esporádicos convencionales (< 6 hrs/mes)</div>
+        </div>
+      </div>
+
+      <div class="charts-grid" style="margin-top: 16px;">
+        <div class="chart-card col-8">
+          <div class="chart-header">
+            <div class="chart-title"><i class="fa-solid fa-diagram-project"></i> Matriz de Dispersión (Solicitudes vs Horas Totales)</div>
+          </div>
+          <div class="chart-container">
+            <canvas id="chartScatter"></canvas>
+          </div>
+        </div>
+        
+        <div class="chart-card col-4">
+          <div class="chart-header">
+            <div class="chart-title"><i class="fa-solid fa-list-check"></i> Resumen de Outliers Detectados</div>
+          </div>
+          <div class="table-wrapper" style="max-height: 280px;">
+            <table id="outliersTable">
+              <thead>
+                <tr>
+                  <th>Colaborador</th>
+                  <th>Horas</th>
+                  <th>Permisos</th>
+                  <th>Nivel</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Contenido dinámico JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABLA DE DATOS DETALLADA -->
+    <section class="table-card">
+      <div class="table-controls">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="searchInput" placeholder="Buscar por nombre, área o motivo...">
+        </div>
+        
+        <div class="filter-group">
+          <select id="areaFilter" class="select-filter">
+            <option value="">Todas las Áreas</option>
+          </select>
+          <select id="reasonFilter" class="select-filter">
+            <option value="">Todos los Motivos</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">Colaborador <i class="fa-solid fa-sort"></i></th>
+              <th onclick="sortTable(1)">Área <i class="fa-solid fa-sort"></i></th>
+              <th onclick="sortTable(2)">Motivo del Permiso <i class="fa-solid fa-sort"></i></th>
+              <th onclick="sortTable(3)">Fecha <i class="fa-solid fa-sort"></i></th>
+              <th onclick="sortTable(4)" style="text-align: right;">Días <i class="fa-solid fa-sort"></i></th>
+              <th onclick="sortTable(5)" style="text-align: right;">Horas <i class="fa-solid fa-sort"></i></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Filas dinámicas JS -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      Sistema Integrado de Análisis de Ausentismo Laboral &copy; 2026 | Desarrollado para Gestión de Talento Humano
+    </footer>
+
+  </div>
+
+  <!-- SCRIPT CON DATOS Y LÓGICA -->
+  <script>
+    // 1. BASE DE DATOS COMPLETA PROCESADA
+    const rawData = [
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "CITA ENDOCRINÓLOGO", fecha: "03/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "MARIA", apellido: "MERIÑO", area: "FACTURACION", motivo: "CITA PARA ECOGRAFÍA", fecha: "31/07/2026", dias: "N/A", horas: 2 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "BUSCAR A HIJO A TERAPIA", fecha: "03/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "ACOMPAÑAR A MAMÁ A CITA POSTQUIRURGICA EN OFTALMOLOGÍA", fecha: "03/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "YELITZA", apellido: "GUERRA", area: "TALENTO HUMANO", motivo: "CITA CONTROL CON GINECOLOGÍA", fecha: "04/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "RUT", apellido: "ZAMBRANO", area: "CALIDAD", motivo: "COMPENSATORIO POR TRABAJO EL DÍA 8 DE AGOSTO POR ROTACIÓN EN SIAU", fecha: "03/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "CELINDA", apellido: "VILLADIEGO", area: "UNIDAD TRANSFUSIONAL", motivo: "TRÁMITE NOTARIAL", fecha: "05/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "CITA ENDOCRINOLOGÍA", fecha: "06/08/2026", dias: "N/A", horas: 3 },
+      { nombre: "MERIELEN", apellido: "ORJUELA", area: "SEGURIDAD DEL PACIENTE", motivo: "CITA PARA ECOGRAFÍA TRANSVAGINAL", fecha: "06/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "CITA PARA ELECTROCARDIOGRAMA", fecha: "10/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "10/08/2026", dias: "N/A", horas: 3 },
+      { nombre: "LUZ MARINA", apellido: "OROZCO", area: "HOTELERIA", motivo: "CITA CON MÉDICO LABORAL", fecha: "11/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "CALAMIDAD CON HIJO", fecha: "10/08/2026", dias: "N/A", horas: 7 },
+      { nombre: "CELINDA", apellido: "VILLADIEGO", area: "UNIDAD TRANSFUSIONAL", motivo: "CITA PARA RESONANCIA MAGNÉTICA", fecha: "13/08/2026", dias: "N/A", horas: 3 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIAS FÍSICAS", fecha: "12/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIAS FÍSICAS", fecha: "14/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "MILDRED", apellido: "DE LA HOZ", area: "HOTELERIA", motivo: "DILIGENCIA EN SURA", fecha: "11/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "MERIELEN", apellido: "ORJUELA", area: "SEGURIDAD DEL PACIENTE", motivo: "CITA DE DERMATOLOGÍA", fecha: "13/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "JULIETH", apellido: "BADRAN", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "11/08/2026", dias: "N/A", horas: 3 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "11/08/2026", dias: "N/A", horas: 3 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "11/08/2026", dias: "N/A", horas: 3 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "11/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "ROBERTO", apellido: "CÁRDENAS", area: "AUDITORIA DE CUENTAS MEDICAS", motivo: "TRÁMITE BANCARIO", fecha: "13/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "CITA MÉDICO LABORAL DE LA EPS", fecha: "13/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "CITA CON MEDICINA LABORAL DE LA TEMPORAL", fecha: "13/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "CELINDA", apellido: "VILLADIEGO", area: "UNIDAD TRANSFUSIONAL", motivo: "EXÁMEN OPTOMETRICO", fecha: "15/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "13/08/2026", dias: "N/A", horas: 3 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "13/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "13/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "JULIETH", apellido: "BADRAN", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "13/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "RICARDO", apellido: "PÉREZ", area: "SST", motivo: "MEDIOS DÍAS COMPENSATORIOS", fecha: "14/08/2026", dias: "1", horas: 8 },
+      { nombre: "DAYANA", apellido: "ENAMORADO", area: "CIRUGIA", motivo: "CITA MÉDICO DEL DOLOR", fecha: "18/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "JULIETH", apellido: "BADRAN", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "14/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "14/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "14/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "14/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "CITA PARA IRIDOTOMÍA MANUAL BILATERAL", fecha: "19/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "PREPARACIÓN PARA CIRUGÍA", fecha: "18/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "PROCEDIMIENTO QUIRÚRGICO", fecha: "19/08/2026", dias: "1", horas: 8 },
+      { nombre: "BRAYAN", apellido: "CORONADO", area: "FACTURACION", motivo: "ASISTIR A SEPELIO DE FAMILIAR", fecha: "19/08/2026", dias: "N/A", horas: 5 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "TOMA DE MUESTRA DE LABORATORIO", fecha: "19/08/2026", dias: "N/A", horas: 3 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "CITA CARDIOLOGÍA", fecha: "20/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "CITA CONSULTA PRENATAL", fecha: "21/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "MARCELA", apellido: "RODELO", area: "FACTURACION", motivo: "COBRO DE HORAS ADICIONALES DEL 8 DE AGOSTO", fecha: "19/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "SERGIO", apellido: "IGLESIAS", area: "CONTABILIDAD", motivo: "MEDIO DÍA COMPENSATORIO DE BRIGADA DE SEGURIDAD", fecha: "21/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PERSONAL", fecha: "21/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "MARIA", apellido: "MERIÑO", area: "FACTURACION", motivo: "CITA CON ORTOPEDISTA", fecha: "24/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "CITA GASTROENTEROLOGÍA", fecha: "24/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "JUAN", apellido: "BURGOS", area: "ADMISIONES", motivo: "CALAMIDAD FAMILIAR", fecha: "13/08/2026", dias: "2", horas: 24 },
+      { nombre: "PAOLA", apellido: "RODRIGUEZ", area: "CONTABILIDAD", motivo: "COMPENSACIÓN DE HORAS", fecha: "24/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "PERMISO PERSONAL", fecha: "24/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "YELITZA", apellido: "GUERRA", area: "TALENTO HUMANO", motivo: "ACOMPAÑAR A PAPÁ A CITA DE ENDOSCOPIA", fecha: "25/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PERSONAL", fecha: "25/08/2026", dias: "N/A", horas: 5 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PERSONAL", fecha: "26/08/2026", dias: "N/A", horas: 5 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PERSONAL", fecha: "27/08/2026", dias: "N/A", horas: 5 },
+      { nombre: "BRAYAN", apellido: "CORONADO", area: "FACTURACION", motivo: "PERMISO PERSONAL", fecha: "27/08/2026", dias: "N/A", horas: 3 },
+      { nombre: "JULIETH", apellido: "BADRAN", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "26/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "26/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "26/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "26/08/2026", dias: "N/A", horas: 2 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "CITA CON CONSULTA PRENATAL PSICOLÓGICA", fecha: "28/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "NATALIA", apellido: "ALBA", area: "AMBIENTAL", motivo: "MAMÁ EN URGENCIAS CON POSIBLE CIRUGÍA", fecha: "27/08/2026", dias: "N/A", horas: 5 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "CITA OTORRINOLARINGOLOGÍA", fecha: "28/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "MERIELEN", apellido: "ORJUELA", area: "SEGURIDAD DEL PACIENTE", motivo: "PERMISO PERSONAL OTORGADO POR JEFE INMEDIATO", fecha: "31/08/2026", dias: "1", horas: 8 },
+      { nombre: "PAOLA", apellido: "RODRIGUEZ", area: "CONTABILIDAD", motivo: "MEDIO DÍA COMPENSATORIO DE BRIGADA", fecha: "28/08/2026", dias: "N/A", horas: 4 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "PERMISO PERSONAL", fecha: "31/08/2026", dias: "N/A", horas: 5 },
+      { nombre: "NAYIB", apellido: "MARTÍNEZ", area: "SISTEMAS", motivo: "PERMISO PERSONAL", fecha: "31/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "MARIA", apellido: "MERIÑO", area: "FACTURACION", motivo: "CITA CON MEDICINA LABORAL DE LA TEMPORAL", fecha: "01/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "ROBERTO", apellido: "CÁRDENAS", area: "AUDITORIA DE CUENTAS MEDICAS", motivo: "CITAS DE OPTOMETRÍA Y OFTALMOLOGÍA DE HIJO", fecha: "01/09/2026", dias: "N/A", horas: 5 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "ENTREGA DE INFORME", fecha: "01/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PARA BUSCAR A HIJO A TERAPIA", fecha: "31/08/2026", dias: "N/A", horas: 1 },
+      { nombre: "NATALIA", apellido: "ALBA", area: "AMBIENTAL", motivo: "CALAMIDAD DOMÉSTICA (MAMÁ HOSPITALIZADA)", fecha: "27/08/2026", dias: "1", horas: 8 },
+      { nombre: "CARLOS", apellido: "PACHECO", area: "FARMACIA", motivo: "CITA EN LA TEMPORAL POR DESCARGO", fecha: "01/09/2026", dias: "1", horas: 2 },
+      { nombre: "MARCELA", apellido: "RODELO", area: "FACTURACION", motivo: "ENTREGA DE INFORME HIJA", fecha: "02/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "ENTREGA DE INFORME HIJO", fecha: "02/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "CITA OFTALMOLOGÍA", fecha: "03/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "JULIETH", apellido: "BADRAN", area: "CIRUGIA", motivo: "CITACIÓN EN COLEGIO DE HIJO", fecha: "04/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PARA BUSCAR A HIJO A TERAPIA", fecha: "04/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "CITA CON PSICOLOGÍA", fecha: "04/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "PRUEBA NEUROPSICOLÓGICA", fecha: "07/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "SE DIRIGE A URGENCIAS", fecha: "04/09/2026", dias: "N/A", horas: 6 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "PERMISO PERSONAL", fecha: "04/09/2026", dias: "N/A", horas: 4 },
+      { nombre: "RICARDO", apellido: "PÉREZ", area: "SST", motivo: "PERMISO PARA ASISTIR AL SEPELIO DE TÍA MATERNA", fecha: "07/09/2026", dias: "N/A", horas: 4 },
+      { nombre: "DIARLEN", apellido: "DÍAZ", area: "COMPRAS", motivo: "CITA MEDICINA GENERAL", fecha: "07/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "CELINDA", apellido: "VILLADIEGO", area: "UNIDAD TRANSFUSIONAL", motivo: "CITAS PARA BIOMETRÍA OCULAR, RECUENTO E INTERFEROMETRÍA", fecha: "08/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "LABORATORIOS PREQUIRÚRGICOS", fecha: "08/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "NATALIA", apellido: "ALBA", area: "AMBIENTAL", motivo: "TRAMITE NOTARIAL", fecha: "08/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "08/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "08/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "CITA DE RAYOS X DE TÓRAX", fecha: "10/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "PERMISO PERSONAL", fecha: "09/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "CITA MÉDICO GENERAL", fecha: "10/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "JULIETH", apellido: "BADRAN", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "10/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "STEPHANY", apellido: "CASTILLA", area: "UCI INTERMEDIA 1", motivo: "CITA CON DERMATOLOGÍA", fecha: "10/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "CITA CONTROL UROLOGÍA", fecha: "11/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "KETTY", apellido: "VEGA", area: "HOSPITALIZACION", motivo: "CITA ONCOLOGÍA", fecha: "14/09/2026", dias: "N/A", horas: 4 },
+      { nombre: "KETTY", apellido: "VEGA", area: "HOSPITALIZACION", motivo: "ESTUDIO DE GANMAGRAFÍA OSEA", fecha: "02/09/2026", dias: "1", horas: 12 },
+      { nombre: "DIARLEN", apellido: "DÍAZ", area: "COMPRAS", motivo: "ENDOSCOPIA CON SEDACIÓN", fecha: "11/09/2026", dias: "N/A", horas: 4 },
+      { nombre: "MARCELA", apellido: "RODELO", area: "FACTURACION", motivo: "ACOMPAÑAMIENTO A ENDOSCOPIA POR SEDACIÓN", fecha: "11/09/2026", dias: "N/A", horas: 4 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "TERAPIAS FÍSICAS", fecha: "11/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "TERAPIAS FÍSICAS", fecha: "14/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "TERAPIAS FÍSICAS", fecha: "15/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "TERAPIAS FÍSICAS", fecha: "16/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "TERAPIAS FÍSICAS", fecha: "17/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "TERAPIAS FÍSICAS", fecha: "18/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "TERAPIAS FÍSICAS", fecha: "21/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "TERAPIAS FÍSICAS", fecha: "22/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "CITA PSICOLOGÍA", fecha: "11/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "CELINDA", apellido: "VILLADIEGO", area: "UNIDAD TRANSFUSIONAL", motivo: "EXÁMEN DE LA VISTA", fecha: "14/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "NATALIA", apellido: "ALBA", area: "AMBIENTAL", motivo: "PERMISO PERSONAL", fecha: "15/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "MILDRED", apellido: "DE LA HOZ", area: "HOTELERIA", motivo: "SE DIRIGE A URGENCIAS DE ARL", fecha: "14/09/2026", dias: "N/A", horas: 5 },
+      { nombre: "DAYANA", apellido: "ENAMORADO", area: "HOTELERIA", motivo: "CALAMIDAD HIJA HOSPITALIZADA", fecha: "08/09/2026", dias: "5", horas: 8 },
+      { nombre: "DAYANA", apellido: "ENAMORADO", area: "HOTELERIA", motivo: "CITA CON FISIATRÍA", fecha: "16/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "MARIA", apellido: "MERIÑO", area: "FACTURACION", motivo: "CITA MEDICINA DEL DOLOR", fecha: "15/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PARA BUSCAR A HIJO A TERAPIA", fecha: "14/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "REALIZAR ESTUDIO DE PRUEBA DE ALIENTO", fecha: "15/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "CITA CARDIOLOGÍA", fecha: "15/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "MARIA", apellido: "MERIÑO", area: "FACTURACION", motivo: "DÍA OTORGADO POR JEFE INMEDIATO", fecha: "14/09/2026", dias: "1", horas: 8 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "PERMISO PERSONAL DILIGENCIA EN TRANSITO DE GALAPA", fecha: "14/09/2026", dias: "N/A", horas: 4 },
+      { nombre: "MILDRED", apellido: "DE LA HOZ", area: "HOTELERIA", motivo: "SE DIRIGE A URGENCIAS DE ARL", fecha: "15/09/2026", dias: "N/A", horas: 4 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "CITA CON CIRUGÍA GENERAL", fecha: "16/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "MERIELEN", apellido: "ORJUELA", area: "SEGURIDAD DEL PACIENTE", motivo: "CITA PARA PROCEDIMIENTO OFTALMOLOGÍA MAMÁ", fecha: "16/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "CITA INTERCONSULTA POR TERAPIA FÍSICA POST CIRUGÍA", fecha: "18/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "PAOLA", apellido: "MANOTAS", area: "CONTABILIDAD", motivo: "CITA ECOGRAFÍA TRANSVAGINAL", fecha: "17/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "MARCELA", apellido: "RODELO", area: "FACTURACION", motivo: "CITA CIRUGÍA GENERAL", fecha: "17/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "SERGIO", apellido: "IGLESIAS", area: "CONTABILIDAD", motivo: "REUNIÓN COLEGIO DE HIJO", fecha: "17/09/2026", dias: "N/A", horas: 4 },
+      { nombre: "PAOLA", apellido: "RODRIGUEZ", area: "CONTABILIDAD", motivo: "ENTREGA DE INFORME DE HIJO", fecha: "17/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "TOMA DE MUESTRA LABORATORIOS", fecha: "17/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "NAYIB", apellido: "MARTÍNEZ", area: "SISTEMAS", motivo: "CITA CON UROLOGÍA", fecha: "18/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "ROBINSON", apellido: "ROJAS", area: "AMBULANCIA", motivo: "PERMISO PERSONAL OTORGADO POR JEFE INMEDIATO", fecha: "17/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "CELINDA", apellido: "VILLADIEGO", area: "UNIDAD TRANSFUSIONAL", motivo: "CITA OFTALMOLOGÍA", fecha: "21/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "CITA FISIATRÍA (ARL)", fecha: "22/09/2026", dias: "N/A", horas: 4 },
+      { nombre: "MERIELEN", apellido: "ORJUELA", area: "SEGURIDAD DEL PACIENTE", motivo: "CITA CON ALERGOLOGÍA", fecha: "18/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "CITA PSICOLOGÍA", fecha: "18/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "CITA CONTROL PRENATAL", fecha: "21/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIA DE DRENAJE LINFÁTICO", fecha: "21/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "REUNIÓN COLEGIO DE HIJO", fecha: "21/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "CITA ODONTOLOGÍA", fecha: "22/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "CONTROL PRENATAL", fecha: "22/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "CITA DE RX DE TÓRAX", fecha: "22/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PERSONAL", fecha: "21/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "ROSALBA", apellido: "LÓPEZ", area: "NUTRICION", motivo: "CITA PARA MAMOGRAFÍA", fecha: "24/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "PERMISO PARA REUNIÓN DE COLEGIO DE HIJO", fecha: "22/09/2026", dias: "N/A", horas: 5 },
+      { nombre: "MILDRED", apellido: "DE LA HOZ", area: "HOTELERIA", motivo: "CITA EN LA TEMPORAL", fecha: "22/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "MERIELEN", apellido: "ORJUELA", area: "SEGURIDAD DEL PACIENTE", motivo: "INMUNOTERAPIA DE EXTRACTO ALERGÉNICO", fecha: "23/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "CITA TERAPIAS DE DRENAJE LINFÁTICO", fecha: "23/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "IRIS", apellido: "DELGADO", area: "UCI INTERMEDIA 1", motivo: "CALAMIDAD CON HIJA EN URGENCIAS", fecha: "17/09/2026", dias: "1", horas: 12 },
+      { nombre: "MERIELEN", apellido: "ORJUELA", area: "SEGURIDAD DEL PACIENTE", motivo: "ACOMPAÑAR A SOBRINA A CITA PRIORITARIA", fecha: "23/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "JULIETH", apellido: "BADRAN", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "23/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "CITA EN LA TEMPORAL", fecha: "24/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "LUZ MARINA", apellido: "OROZCO", area: "HOTELERIA", motivo: "CITA CON MEDICO LABORAL", fecha: "23/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "CITA PARA ELECTROCARDIOGRAMA", fecha: "24/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "CITA EN LA TEMPORAL", fecha: "24/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIA DE DRENAJE LINFÁTICO", fecha: "25/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIA DE DRENAJE LINFÁTICO", fecha: "30/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "YELITZA", apellido: "GUERRA", area: "TALENTO HUMANO", motivo: "PERMISO PERSONAL NO REMUNERADO PARA VIAJE", fecha: "28/09/2026", dias: "1", horas: 8 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PARA BUSCAR A HIJO A TERAPIA", fecha: "25/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "CELINDA", apellido: "VILLADIEGO", area: "UNIDAD TRANSFUSIONAL", motivo: "COBRO DE HORAS ADICIONALES", fecha: "28/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "ELÍAS", apellido: "MARTÍNEZ", area: "UCI PLENA", motivo: "CALAMIDAD POR INCENDIO EN EDIFICIO RESIDENCIAL", fecha: "03/09/2026", dias: "1", horas: 12 },
+      { nombre: "DIARLEN", apellido: "DÍAZ", area: "COMPRAS", motivo: "CITA DERMATOLOGÍA", fecha: "26/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "CITA CONTROL RIESGO CARDIOVASCULAR", fecha: "28/09/2026", dias: "N/A", horas: 3 },
+      { nombre: "KAREN", apellido: "AYALA", area: "HOSPITALIZACION", motivo: "CITA CON ORTOPEDIA", fecha: "28/09/2026", dias: "N/A", horas: 1 },
+      { nombre: "PAOLA", apellido: "RODRIGUEZ", area: "CONTABILIDAD", motivo: "COMPENSACIÓN DE HORAS CIERRE CONTABLE", fecha: "28/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "CITA CON MÉDICO LABORAL DE ARL COLPATRIA", fecha: "29/09/2026", dias: "N/A", horas: 2 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "CITA PSICOLOGÍA", fecha: "01/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "CELINDA", apellido: "VILLADIEGO", area: "UNIDAD TRANSFUSIONAL", motivo: "CITA CON MEDICINA INTERNA", fecha: "05/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "MARGARITA", apellido: "JIMENEZ", area: "NUTRICION", motivo: "COMPENSATORIO CAPACITACIÓN AUXILIARES", fecha: "30/09/2026", dias: "N/A", horas: 6 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "ENTREGA DE INFORME", fecha: "02/10/2026", dias: "N/A", horas: 3 },
+      { nombre: "CARLOS", apellido: "PACHECO", area: "FARMACIA", motivo: "DILIGENCIA BANCARIA", fecha: "02/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "CITA MÉDICO LABORAL DE LA ARL", fecha: "06/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "05/10/2026", dias: "N/A", horas: 3 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "02/10/2026", dias: "N/A", horas: 3 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "CITA ODONTOLÓGICA", fecha: "05/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "JULIETH", apellido: "BADRAN", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "02/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "DIARLEN", apellido: "DÍAZ", area: "COMPRAS", motivo: "ECOGRAFÍA DE SENOS Y DE HOMBRO", fecha: "05/10/2026", dias: "N/A", horas: 4 },
+      { nombre: "DIARLEN", apellido: "DÍAZ", area: "COMPRAS", motivo: "CITA ORTOPEDIA", fecha: "07/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "PERMISO PERSONAL AUTORIZADO POR JEFE INMEDIATO", fecha: "05/10/2026", dias: "N/A", horas: 5 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "MEDIO DÍA DE CUMPLEAÑOS", fecha: "05/10/2026", dias: "N/A", horas: 4 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIA DE DRENAJE LINFÁTICO", fecha: "06/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "LUISA", apellido: "NESTLER", area: "ATENCION AL USUARIO", motivo: "CITAS MÉDICAS", fecha: "07/10/2026", dias: "N/A", horas: 5 },
+      { nombre: "YELITZA", apellido: "GUERRA", area: "TALENTO HUMANO", motivo: "CITA NUTRICIÓN", fecha: "07/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "JESUS", apellido: "SARMIENTO", area: "CARTERA", motivo: "CITA EN PUERTO COLOMBIA LICENCIA CONDUCCIÓN", fecha: "07/10/2026", dias: "N/A", horas: 5 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIA DE DRENAJE LINFÁTICO", fecha: "08/10/2026", dias: "N/A", horas: 3 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIA DE DRENAJE LINFÁTICO", fecha: "13/10/2026", dias: "N/A", horas: 3 },
+      { nombre: "BRAYAN", apellido: "CORONADO", area: "FACTURACION", motivo: "PERMISO PERSONAL", fecha: "09/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "JULIETH", apellido: "BADRAN", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "09/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "09/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "COBRO DE HORAS ADICIONALES", fecha: "09/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "CITA MÉDICA NUTRICIÓN", fecha: "09/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "ZULAY", apellido: "DURÁN", area: "COORDINACION DE ENFERMERIA", motivo: "CITA TAC DE SENOS PARANASALES", fecha: "09/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "BUSCAR A HIJO A TERAPIA", fecha: "09/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "DAYANA", apellido: "DE LA CRUZ", area: "CIRUGIA", motivo: "MATRICULAR A HIJO EN COLEGIO NUEVO", fecha: "13/10/2026", dias: "N/A", horas: 4 },
+      { nombre: "ALDAIR", apellido: "ESCORCIA", area: "FARMACIA", motivo: "CALAMIDAD DE HIJAS HOSPITALIZADAS", fecha: "06/10/2026", dias: "2", horas: 24 },
+      { nombre: "DIDIER", apellido: "CORTEZANO", area: "HOTELERIA", motivo: "ASISTIR A SEPELIO DE SOBRINO", fecha: "13/10/2026", dias: "N/A", horas: 4 },
+      { nombre: "RODOLFO", apellido: "CASTRO", area: "HOTELERIA", motivo: "FALLECIMIENTO DE ABUELA MATERNA", fecha: "03/10/2026", dias: "3", horas: 24 },
+      { nombre: "CELINDA", apellido: "VILLADIEGO", area: "UNIDAD TRANSFUSIONAL", motivo: "CITA OFTALMOLÓGICA", fecha: "14/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "CITA CON ORTOPEDIA", fecha: "14/10/2026", dias: "N/A", horas: 4 },
+      { nombre: "RICARDO", apellido: "PÉREZ", area: "SST", motivo: "COBRO DE HORAS ADICIONALES", fecha: "14/10/2026", dias: "N/A", horas: 3 },
+      { nombre: "LUCILA", apellido: "HERNÁNDEZ", area: "CALIDAD", motivo: "CITA CON PSIQUIATRÍA", fecha: "19/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "SANDRA", apellido: "MORALES", area: "AUTORIZACIONES", motivo: "BUSCAR A HIJO A TERAPIA", fecha: "16/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "ANGIE", apellido: "BELEÑO", area: "CIRUGIA", motivo: "CONTROL PRENATAL", fecha: "19/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "STEVEN", apellido: "STAND", area: "FACTURACION", motivo: "CALAMIDAD POR ACCIDENTE DE PAPÁ EN AGUACHICA", fecha: "13/10/2026", dias: "4", horas: 32 },
+      { nombre: "LUZ MARINA", apellido: "OROZCO", area: "HOTELERIA", motivo: "FALLECIMIENTO DE SUEGRO", fecha: "15/10/2026", dias: "2", horas: 24 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIA DE DRENAJE LINFÁTICO", fecha: "20/10/2026", dias: "N/A", horas: 3 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "TERAPIA DE DRENAJE LINFÁTICO", fecha: "21/10/2026", dias: "N/A", horas: 3 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "CITA CON FISIATRÍA ARL COLPATRIA", fecha: "21/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "YELITZA", apellido: "GUERRA", area: "TALENTO HUMANO", motivo: "ACOMPAÑAR A PAPÁ A CITA DE RETINOLOGÍA", fecha: "21/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "MARIA", apellido: "RODRIGUEZ", area: "UCI PLENA", motivo: "CITA MEDICA ESPECIALISTA NEUROLOGÍA", fecha: "21/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "MERIELEN", apellido: "ORJUELA", area: "SEGURIDAD DEL PACIENTE", motivo: "INMUNOTERAPIA DE EXTRACTO", fecha: "23/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "CLAUDIA", apellido: "GUTIÉRREZ", area: "CIRUGIA", motivo: "CITA PARA REALIZAR EXÁMENES MÉDICOS", fecha: "26/10/2026", dias: "N/A", horas: 1 },
+      { nombre: "JUAN CARLOS", apellido: "POZZO", area: "CONSULTA EXTERNA", motivo: "CITA CON PSICOLOGÍA", fecha: "27/10/2026", dias: "N/A", horas: 2 },
+      { nombre: "NATALIA", apellido: "ALBA", area: "AMBIENTAL", motivo: "PERMISO PERSONAL", fecha: "27/10/2026", dias: "N/A", horas: 5 },
+      { nombre: "MERIELEN", apellido: "ORJUELA", area: "SEGURIDAD DEL PACIENTE", motivo: "CALAMIDAD DOMESTICA TUBO DE AGUA", fecha: "23/10/2026", dias: "N/A", horas: 4 },
+      { nombre: "OMAIRA", apellido: "URREA", area: "FACTURACION", motivo: "CITA CON FISIATRÍA", fecha: "26/10/2026", dias: "N/A", horas: 2 }
+    ];
+
+    // Helper: Categorizar Motivos
+    function categorizarMotivo(m) {
+      m = m.toUpperCase();
+      if (m.includes("COBRO DE HORAS") || m.includes("COMPENSAT")) return "Compensación de Tiempo";
+      if (m.includes("TERAPIA") || m.includes("FISIATR") || m.includes("REUMAT") || m.includes("DRENAJE") || m.includes("INMUNOTERAPIA")) return "Tratamientos & Terapias";
+      if (m.includes("CITA") || m.includes("EXÁMEN") || m.includes("TAC") || m.includes("OFTALM") || m.includes("ECOGRAF")) return "Citas Médicas & Exámenes";
+      if (m.includes("CALAMIDAD") || m.includes("URGENCIA") || m.includes("FALLECIMIENTO") || m.includes("SEPELIO")) return "Calamidades & Licencias";
+      if (m.includes("HIJO") || m.includes("PADRES") || m.includes("COLEGIO") || m.includes("PAPÁ") || m.includes("MAMÁ")) return "Asuntos Familiares/Escolares";
+      return "Permisos Personales & Varios";
+    }
+
+    // Processed Array
+    const processedData = rawData.map(item => ({
+      ...item,
+      fullName: `${item.nombre} ${item.apellido}`.trim(),
+      categoriaMotivo: categorizarMotivo(item.motivo),
+      horasNum: Number(item.horas) || 0,
+      monthName: getMonthName(item.fecha)
+    }));
+
+    function getMonthName(dateStr) {
+      if(!dateStr) return "Otros";
+      const parts = dateStr.split('/');
+      if(parts.length < 3) return "Otros";
+      const m = parseInt(parts[1], 10);
+      const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+      return months[m - 1] || "Otros";
+    }
+
+    // 2. LÓGICA DE KPI Y CÁLCULOS
+    function calculateKPIs() {
+      // Total Horas y Días
+      const totalHours = processedData.reduce((acc, curr) => acc + curr.horasNum, 0);
+      const totalDays = (totalHours / 8).toFixed(1);
+      
+      document.getElementById('kpi-total-hours').innerText = `${totalHours} hrs`;
+      document.getElementById('kpi-total-days').innerText = `Equivalente a ${totalDays} días laborales completos`;
+
+      // Top Area
+      const areaMap = {};
+      processedData.forEach(d => {
+        areaMap[d.area] = (areaMap[d.area] || 0) + d.horasNum;
+      });
+      const sortedAreas = Object.entries(areaMap).sort((a,b) => b[1] - a[1]);
+      const topArea = sortedAreas[0];
+      document.getElementById('kpi-top-area').innerText = topArea ? topArea[0] : 'N/A';
+      document.getElementById('kpi-top-area-sub').innerText = topArea ? `${topArea[1]} horas acumuladas` : '';
+
+      // Top Person
+      const personMap = {};
+      processedData.forEach(d => {
+        personMap[d.fullName] = (personMap[d.fullName] || 0) + d.horasNum;
+      });
+      const sortedPersons = Object.entries(personMap).sort((a,b) => b[1] - a[1]);
+      const topPerson = sortedPersons[0];
+      document.getElementById('kpi-top-person').innerText = topPerson ? topPerson[0] : 'N/A';
+      document.getElementById('kpi-top-person-sub').innerText = topPerson ? `${topPerson[1]} hrs perdidas acumuladas` : '';
+
+      // Top Month
+      const monthMap = {};
+      processedData.forEach(d => {
+        monthMap[d.monthName] = (monthMap[d.monthName] || 0) + d.horasNum;
+      });
+      const sortedMonths = Object.entries(monthMap).sort((a,b) => b[1] - a[1]);
+      const topMonth = sortedMonths[0];
+      document.getElementById('kpi-top-month').innerText = topMonth ? topMonth[0] : 'N/A';
+      document.getElementById('kpi-top-month-sub').innerText = topMonth ? `${topMonth[1]} horas perdidas en el mes` : '';
+
+      // Top Reason
+      const reasonCount = {};
+      processedData.forEach(d => {
+        reasonCount[d.categoriaMotivo] = (reasonCount[d.categoriaMotivo] || 0) + 1;
+      });
+      const sortedReasons = Object.entries(reasonCount).sort((a,b) => b[1] - a[1]);
+      const topReason = sortedReasons[0];
+      document.getElementById('kpi-top-reason').innerText = topReason ? topReason[0] : 'N/A';
+      document.getElementById('kpi-top-reason-sub').innerText = topReason ? `${topReason[1]} solicitudes registradas` : '';
+    }
+
+    // 3. RENDERIZADO DE GRÁFICOS
+    let chartAreaObj, chartColabsObj, chartMonthlyObj, chartReasonsObj, chartScatterObj;
+
+    function renderCharts() {
+      // Colors
+      const primaryColor = '#1E3A8A';
+      const accentColor = '#F59E0B';
+      const dangerColor = '#EF4444';
+
+      // Data 1: Area
+      const areaMap = {};
+      processedData.forEach(d => areaMap[d.area] = (areaMap[d.area] || 0) + d.horasNum);
+      const sortedAreas = Object.entries(areaMap).sort((a,b) => b[1] - a[1]).slice(0, 7);
+
+      ctxArea = document.getElementById('chartArea').getContext('2d');
+      chartAreaObj = new Chart(ctxArea, {
+        type: 'bar',
+        data: {
+          labels: sortedAreas.map(i => i[0]),
+          datasets: [{
+            label: 'Horas Totales Perdidas',
+            data: sortedAreas.map(i => i[1]),
+            backgroundColor: primaryColor,
+            borderRadius: 6
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+
+      // Data 2: Top Colabs
+      const personMap = {};
+      processedData.forEach(d => personMap[d.fullName] = (personMap[d.fullName] || 0) + d.horasNum);
+      const sortedColabs = Object.entries(personMap).sort((a,b) => b[1] - a[1]).slice(0, 8);
+
+      ctxColabs = document.getElementById('chartColabs').getContext('2d');
+      chartColabsObj = new Chart(ctxColabs, {
+        type: 'bar',
+        data: {
+          labels: sortedColabs.map(i => i[0]),
+          datasets: [{
+            label: 'Horas Ausentes',
+            data: sortedColabs.map(i => i[1]),
+            backgroundColor: accentColor,
+            borderRadius: 6
+          }]
+        },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+
+      // Data 3: Monthly
+      const monthsOrder = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+      const monthMap = {};
+      processedData.forEach(d => monthMap[d.monthName] = (monthMap[d.monthName] || 0) + d.horasNum);
+      const labelsMonthly = monthsOrder.filter(m => monthMap[m] !== undefined);
+      const dataMonthly = labelsMonthly.map(m => monthMap[m]);
+
+      ctxMonthly = document.getElementById('chartMonthly').getContext('2d');
+      chartMonthlyObj = new Chart(ctxMonthly, {
+        type: 'line',
+        data: {
+          labels: labelsMonthly,
+          datasets: [{
+            label: 'Horas Ausentes por Mes',
+            data: dataMonthly,
+            borderColor: primaryColor,
+            backgroundColor: 'rgba(30, 58, 138, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 5,
+            pointBackgroundColor: accentColor
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      // Data 4: Reasons Pie
+      const reasonCount = {};
+      processedData.forEach(d => reasonCount[d.categoriaMotivo] = (reasonCount[d.categoriaMotivo] || 0) + 1);
+
+      ctxReasons = document.getElementById('chartReasons').getContext('2d');
+      chartReasonsObj = new Chart(ctxReasons, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(reasonCount),
+          datasets: [{
+            data: Object.values(reasonCount),
+            backgroundColor: ['#1E3A8A', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6', '#64748B']
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+      });
+
+      // Data 5: Outliers Scatter Plot (Requests vs Hours)
+      const personMetrics = {};
+      processedData.forEach(d => {
+        if(!personMetrics[d.fullName]) personMetrics[d.fullName] = { name: d.fullName, count: 0, hours: 0 };
+        personMetrics[d.fullName].count += 1;
+        personMetrics[d.fullName].hours += d.horasNum;
+      });
+
+      const metricsArray = Object.values(personMetrics);
+      
+      ctxScatter = document.getElementById('chartScatter').getContext('2d');
+      chartScatterObj = new Chart(ctxScatter, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Colaboradores',
+            data: metricsArray.map(p => ({ x: p.count, y: p.hours, name: p.name })),
+            backgroundColor: metricsArray.map(p => {
+              if(p.hours >= 20 || p.count >= 8) return '#EF4444'; // Red Extreme
+              if(p.hours >= 10 || p.count >= 4) return '#F59E0B'; // Yellow Moderate
+              return '#10B981'; // Green Typical
+            }),
+            pointRadius: 7
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const raw = ctx.raw;
+                  return `${raw.name}: ${raw.x} solicitudes, ${raw.y} horas`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { display: true, text: 'Cantidad de Solicitudes' } },
+            y: { title: { display: true, text: 'Total Horas Perdidas' } }
+          }
+        }
+      });
+
+      // Render Outliers Table Summary
+      renderOutliersTable(metricsArray);
+    }
+
+    function renderOutliersTable(metrics) {
+      const tbody = document.querySelector('#outliersTable tbody');
+      tbody.innerHTML = '';
+
+      const outliers = metrics
+        .filter(p => p.hours >= 10 || p.count >= 4)
+        .sort((a,b) => b.hours - a.hours);
+
+      outliers.forEach(item => {
+        let tag = '';
+        if(item.hours >= 20 || item.count >= 8) {
+          tag = '<span class="tag badge-extreme">🔴 Extremo</span>';
+        } else {
+          tag = '<span class="tag badge-moderate">🟡 Moderado</span>';
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${item.name}</strong></td>
+          <td>${item.hours} hrs</td>
+          <td>${item.count}</td>
+          <td>${tag}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 4. TABLA DETALLADA CON FILTROS Y BÚSQUEDA
+    function renderMainTable(data) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${item.fullName}</strong></td>
+          <td><span class="tag tag-area">${item.area}</span></td>
+          <td>${item.motivo}</td>
+          <td>${item.fecha}</td>
+          <td style="text-align: right;">${item.dias}</td>
+          <td style="text-align: right; font-weight: 700; color: var(--primary);">${item.horasNum} h</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function populateFilterSelects() {
+      const areaSelect = document.getElementById('areaFilter');
+      const reasonSelect = document.getElementById('reasonFilter');
+
+      const areas = [...new Set(processedData.map(i => i.area))].sort();
+      const reasons = [...new Set(processedData.map(i => i.categoriaMotivo))].sort();
+
+      areas.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = a;
+        areaSelect.appendChild(opt);
+      });
+
+      reasons.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = r;
+        reasonSelect.appendChild(opt);
+      });
+    }
+
+    function filterData() {
+      const searchValue = document.getElementById('searchInput').value.toLowerCase();
+      const selectedArea = document.getElementById('areaFilter').value;
+      const selectedReason = document.getElementById('reasonFilter').value;
+
+      const filtered = processedData.filter(item => {
+        const matchesSearch = item.fullName.toLowerCase().includes(searchValue) ||
+                              item.area.toLowerCase().includes(searchValue) ||
+                              item.motivo.toLowerCase().includes(searchValue);
+        
+        const matchesArea = selectedArea === "" || item.area === selectedArea;
+        const matchesReason = selectedReason === "" || item.categoriaMotivo === selectedReason;
+
+        return matchesSearch && matchesArea && matchesReason;
+      });
+
+      renderMainTable(filtered);
+    }
+
+    // Ordenamiento de tabla
+    let sortDirection = false;
+    function sortTable(columnIndex) {
+      sortDirection = !sortDirection;
+      processedData.sort((a, b) => {
+        let valA, valB;
+        switch(columnIndex) {
+          case 0: valA = a.fullName; valB = b.fullName; break;
+          case 1: valA = a.area; valB = b.area; break;
+          case 2: valA = a.motivo; valB = b.motivo; break;
+          case 3: valA = a.fecha; valB = b.fecha; break;
+          case 4: valA = a.dias; valB = b.dias; break;
+          case 5: valA = a.horasNum; valB = b.horasNum; break;
+        }
+        if (valA < valB) return sortDirection ? -1 : 1;
+        if (valA > valB) return sortDirection ? 1 : -1;
+        return 0;
+      });
+      filterData();
+    }
+
+    // EVENT LISTENERS & INITIALIZATION
+    document.addEventListener('DOMContentLoaded', () => {
+      calculateKPIs();
+      renderCharts();
+      populateFilterSelects();
+      renderMainTable(processedData);
+
+      document.getElementById('searchInput').addEventListener('input', filterData);
+      document.getElementById('areaFilter').addEventListener('change', filterData);
+      document.getElementById('reasonFilter').addEventListener('change', filterData);
+    });
+  </script>
+</body>
+</html>
